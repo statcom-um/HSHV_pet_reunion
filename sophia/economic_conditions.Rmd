@@ -1,0 +1,190 @@
+---
+title: "HSHV RTO vs economic conditions"
+author: "Sophia Luo"
+date: "2024-12-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(lubridate)
+library(dplyr)
+
+hshv <- read.csv("/Users/luoda/Documents/STATCOM/HSHV/final_noduplicates.csv")
+sp500 <- read.csv("/Users/luoda/Documents/STATCOM/HSHV/nasdaq_sp500.csv")
+dowJones <- read.csv("/Users/luoda/Documents/STATCOM/HSHV/Dow Jones Industrial Average Historical Data.csv") # Note that "Price" is closing price
+
+# Fix dumb stupid character data types
+  # HSHV: keep dates only, remove times
+hshv <- hshv %>%
+  mutate(
+    IntakeDateGood = sub(" .*", "", Intake.Date) |> mdy(),
+    OutcomeDateGood = sub(" .*", "", Outcome.Date) |> mdy()
+  )
+# Sanity check
+any(hshv$OutcomeDateGood[!is.na(hshv$OutcomeDateGood)] < hshv$IntakeDateGood[!is.na(hshv$OutcomeDateGood)])
+
+  # S&P 500: just convert to actual date data type
+sp500$DateGood <- mdy(sp500$Date)
+  # DJ: convert date and get rid of commas from prices
+dowJones$DateGood <- mdy(dowJones$Date)
+dowJones$OpenGood <- as.numeric(gsub(pattern = '[,]', replacement = "", x = dowJones$Open))
+
+# Restrict market data to HSHV date range
+dateMatchSp <- sp500$DateGood >= min(hshv$IntakeDateGood) & sp500$DateGood <= max(hshv$IntakeDateGood)
+
+dateMatchDj <- dowJones$DateGood >= min(hshv$IntakeDateGood) & dowJones$DateGood <= max(hshv$IntakeDateGood)
+
+# Dump the character date column and dates not applicable to hshv
+sp500Matched <- sp500[dateMatchSp, -1]
+dowJonesMatched <- dowJones[dateMatchDj, -1]
+
+plot(sp500Matched$DateGood, sp500Matched$Open, type = 'l')
+plot(dowJonesMatched$DateGood, dowJonesMatched$OpenGood, type = 'l')
+
+# Create returned variable
+hshv$Returned = grepl(pattern = 'Stray Reclaim', x = hshv$Outcome.Type)
+
+# Clean some column names
+hshv <- hshv %>% rename(AnimalID = Animal..)
+
+# Sort the data by intake date
+hshv <- hshv[order(hshv$IntakeDateGood), ]
+```
+Visualize length of stay of each animal using line segments
+```{r}
+library(ggplot2)
+
+# Calculate the length of stay for each animal, excluding those with "" as the outcome date
+hshv$LengthOfStay <- ifelse(hshv$OutcomeDateGood == "", NA, hshv$OutcomeDateGood - hshv$IntakeDateGood)
+
+hshv_clean <- hshv %>%
+  filter(!is.na(OutcomeDateGood)) %>%
+  mutate(Returned = factor(Returned)) %>%
+  arrange(Returned, IntakeDateGood) %>%
+  mutate(Order = row_number(),
+         Order = factor(Order, levels = Order))
+
+# Plot using the new Order for y and yend, and removing y-axis labels
+ggplot(hshv_clean, aes(x = IntakeDateGood, xend = OutcomeDateGood, y = Order, yend = Order, color = Returned)) +
+  geom_segment() +
+  labs(title = 'Length of Stay for Each Animal', x = 'Date', y = NULL) +
+  scale_color_manual(values = c('FALSE' = 'black', 'TRUE' = 'red')) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),       # Remove y-axis text
+        axis.ticks.y = element_blank())      # Remove y-axis ticks
+
+# For the second plot, sort by IntakeDateGood only, without separating groups
+hshv_combined <- hshv_clean %>%
+  arrange(IntakeDateGood) %>%
+  mutate(Order = row_number(),
+         Order = factor(Order, levels = Order))
+
+# Plot without separating returned and non-returned animals
+ggplot(hshv_combined, aes(x = IntakeDateGood, xend = OutcomeDateGood, y = Order, yend = Order, color = Returned, linewidth = Returned)) +
+  geom_segment() +
+  scale_linewidth_manual(values = c('FALSE' = 0.5, 'TRUE' = 1)) +
+  labs(title = 'Length of Stay for Each Animal (Combined Groups)', x = 'Date', y = NULL) +
+  scale_color_manual(values = c('FALSE' = 'black', 'TRUE' = 'red')) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),       # Remove y-axis text
+        axis.ticks.y = element_blank())      # Remove y-axis ticks
+
+```
+Calculate running total number of animals in the shelter.
+```{r}
+hshv_clean <- hshv %>%
+  filter(!is.na(OutcomeDateGood)) 
+# Generate the sequence of dates covering the date range with a 30-day lag at the start
+start_date <- min(hshv_clean$IntakeDateGood, na.rm = TRUE) + days(30)
+end_date <- max(hshv_clean$IntakeDateGood, na.rm = TRUE)
+date_range <- seq(start_date, end_date, by = "day")
+
+# Calculate the running total of stray animals in the shelter for each date
+shelter_count <- sapply(date_range, function(current_date) {
+  sum(hshv_clean$IntakeDateGood <= current_date & hshv_clean$OutcomeDateGood > current_date, na.rm = TRUE)
+})
+
+# Create a data frame of the results
+shelter_count_df <- data.frame(Date = date_range, Count = shelter_count)
+
+# Calculate the number of returned animals for each month
+monthly_returns <- hshv_clean %>%
+  filter(Returned == TRUE) %>%
+  group_by(Month = floor_date(IntakeDateGood, "month")) %>%
+  summarize(Returns = n()) %>%
+  filter(Month > start_date)
+
+# Incorporate Consumer Price Index (CPI)
+# https://www.bls.gov/regions/mid-atlantic/data/consumerpriceindexhistorical_us_table.htm
+
+# Plot the running total of stray animals in the shelter, adding month-year labels to the x-axis
+p <- ggplot(shelter_count_df, aes(x = Date, y = Count)) +
+  geom_line(color = "blue") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%Y") + 
+  labs(title = "Running Total of Stray Animals in the Shelter", x = "Date", y = "Number of Animals") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Optional: tilt the x-axis labels for better readability
+  # Add a line to the graph showing how many animals were returned each month
+  geom_line(data = monthly_returns, aes(x = Month, y = Returns), color = "red", linewidth = 1) 
+
+# Print the plot
+print(p)
+
+
+cpiValues <- c(254.202, 255.548, 256.092, 256.143, 256.571, 256.558, 256.759, 257.346, 257.208, 256.974, 257.971, 258.678, 258.115, 256.389, 256.394, 257.797, 259.101, 259.918, 260.280, 260.388, 260.229, 260.474, 261.582, 263.014, 264.877, 267.054, 269.195, 271.696, 273.003, 273.567, 274.310, 276.589, 277.948, 278.802, 281.148, 283.716, 287.504, 289.109, 292.296, 296.311, 296.276, 296.171, 296.808, 298.012, 297.711, 296.797, 299.170, 300.840, 301.836, 303.363, 304.127, 305.109, 305.691, 307.026, 307.789, 307.671, 307.051, 306.746, 308.417, 310.326, 312.332, 313.548, 314.069, 314.175, 314.540, 314.796, 315.301)
+cpiDates <- seq(from = date("2019-03-01"),
+             to = date("2024-09-01"),
+             by = 'month')
+cpiDf <- data.frame(Date = cpiDates, CPI = cpiValues)
+ggplot(cpiDf, aes(x = Date, y = CPI)) +
+  geom_line(color = "green") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%Y") + 
+  labs(title = "Consumer Price Index Over the Same Time Period", x = "Date", y = "Number of Animals") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Calculate moving return to owner rate
+```{r}
+sum(hshv$Returned) # 1071
+
+# Create a sequence of dates from the first to the last date in the HSHV data
+dateSeq <- seq(from = min(hshv$IntakeDateGood), to = max(hshv$IntakeDateGood), by = 'day')
+
+windowLength <- 60
+adjustedDateSeq <- dateSeq[windowLength:length(dateSeq)]
+# Calculate the number of found strays over the last [windowLength] days for each date
+returnedRollingCount <- sapply(adjustedDateSeq, function(date) {
+  # Get the subset of the data that is within the last [windowLength] days
+  subset <- hshv[hshv$IntakeDateGood >= date - days(60) & hshv$IntakeDateGood <= date, ]
+  # Calculate the proportion of returns
+  return(sum(subset$Returned))
+})
+
+# # Calculate the proportion of returns over the last [windowLength] days for each date
+returnedRollingRate <- sapply(adjustedDateSeq, function(date) {
+  # Get the subset of the data that is within the last [windowLength] days
+  subset <- hshv[hshv$IntakeDateGood >= date - days(60) & hshv$IntakeDateGood <= date, ]
+  # Calculate the proportion of returns
+  return(sum(subset$Returned) / nrow(subset))
+})
+
+# Calculate the number of strays in the system
+
+# Plot the proportion of returns over time
+par(mar = c(5, 4, 4, 4) + 0.1)
+plot(adjustedDateSeq, returnedRollingRate, type = 'l', xlab = 'Date', ylab = 'Proportion of Returns', col = 'blue')
+par(new = TRUE)
+plot(adjustedDateSeq, returnedRollingCount, type = 'l')
+
+# Using two separate scales for the y-axis, plot the proportion of returns and the S&P 500 Open price
+par(mar = c(5, 4, 4, 4) + 0.1)
+# plot(adjustedDateSeq, returnedRollingRate, type = 'l', xlab = 'Date', ylab = 'Proportion of Returns', col = 'blue')
+# par(new = TRUE)
+# plot(dateSeq, c(rep(NA, windowLength - 1), returnedRollingCount), type = 'l', xlab = 'Date', ylab = 'Proportion of Returns', col = 'black')
+par(new = TRUE)
+plot(sp500Matched$DateGood, sp500Matched$Open, type = 'l', xlab = '', ylab = '', col = 'green')
+
+```
+Ideas: stratify this analysis by dog/cat species

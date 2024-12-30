@@ -1,0 +1,70 @@
+---
+title: "Google Geocoding R Example"
+author: "Sophia Luo"
+date: "2024-10-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# install.packages("mapsapi")
+
+library(mapsapi)
+
+
+#### NOTE that this is Sophia's personal API key. Don't share it! ####
+
+key = "AIzaSyCQhSlO7I12W_LENQsmU_JMkT7hFa4zmRw"
+
+##############
+
+```
+Load sample data
+```{r}
+# install.packages("readxl")
+
+library(readxl)
+data <- readxl::read_excel("/Users/luoda/Downloads/StrayReport09.04.24.xlsx")
+data$`Location Found`
+data$LocationPlus <- paste(data$`Location Found`, data$`Jurisdiction In`, ", Michigan")
+```
+Find latitude and longitude of sample data
+```{r}
+# No results found for many addresses when you only use Location Found
+
+# testGeocode = mp_geocode(
+#   addresses = data$`Location Found`,
+#   key = "AIzaSyCQhSlO7I12W_LENQsmU_JMkT7hFa4zmRw",
+#   quiet = TRUE
+# )
+# 
+# testGeocode # An XML document
+
+testGeocode2 = mp_geocode(
+  addresses = data$LocationPlus,
+  key = "AIzaSyCQhSlO7I12W_LENQsmU_JMkT7hFa4zmRw",
+  quiet = TRUE
+)
+
+testGeocode2
+```
+Convert XML output to geocoded point locations
+```{r}
+# points = mp_get_points(testGeocode)
+# points$pnt
+
+points2 = mp_get_points(testGeocode2)
+```
+Use leaflet for plotting points on a map
+```{r}
+# install.packages("leaflet")
+library(leaflet)
+
+leaflet() %>% 
+  addProviderTiles("CartoDB.DarkMatter") %>%
+  addCircleMarkers(data = points)
+
+leaflet() %>% 
+  addProviderTiles("CartoDB.DarkMatter") %>%
+  addCircleMarkers(data = points2)
+```
+
