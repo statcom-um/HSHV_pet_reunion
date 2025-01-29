@@ -3,9 +3,20 @@ import streamlit as st
 from streamlit_folium import st_folium
 from folium.plugins import MarkerCluster
 import pandas as pd
+import requests
+from io import StringIO
 
 # connect and read the data
-data = pd.read_csv('./Data/final_noduplicates.csv')
+def load_original_data():
+    url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/anran/Data/final_noduplicates.csv?token=GHSAT0AAAAAAC5P3CVLKTIKZKNM66AIESDGZ4Z5CKQ'
+    response = requests.get(url)
+    if response.status_code == 200:
+        return pd.read_csv(StringIO(response.text))
+    else:
+        st.error("Failed to load data from GitHub.")
+        return None
+# data = pd.read_csv('./Data/final_noduplicates.csv')
+data = load_original_data()
 # latitude and longitude
 data['lat'] = data['lat'].astype(float)
 data['lon'] = data['lon'].astype(float)
