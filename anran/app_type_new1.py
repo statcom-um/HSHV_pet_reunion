@@ -3,8 +3,9 @@ import streamlit as st
 from streamlit_folium import st_folium
 from folium.plugins import MarkerCluster
 import pandas as pd
+
 # connect and read the data
-data = pd.read_csv('Data/final_noduplicates.csv')
+data = pd.read_csv('./Data/final_noduplicates.csv')
 # latitude and longitude
 data['lat'] = data['lat'].astype(float)
 data['lon'] = data['lon'].astype(float)
