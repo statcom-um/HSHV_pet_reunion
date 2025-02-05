@@ -3,4 +3,3 @@ streamlit
 streamlit_folium
 pandas
 requests
-io
