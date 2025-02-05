@@ -8,7 +8,7 @@ from io import StringIO
 
 # connect and read the data
 def load_original_data():
-    url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/anran/Data/final_noduplicates.csv?token=GHSAT0AAAAAAC5P3CVLKTIKZKNM66AIESDGZ4Z5CKQ'
+    url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/anran/Data/final_noduplicates.csv'
     response = requests.get(url)
     if response.status_code == 200:
         return pd.read_csv(StringIO(response.text))
