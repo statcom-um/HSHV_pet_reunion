@@ -5,7 +5,7 @@ from folium.plugins import MarkerCluster
 import pandas as pd
 import requests
 from io import StringIO
-
+# trivial change
 # Function to load data from GitHub URL
 @st.cache
 def load_original_data():
