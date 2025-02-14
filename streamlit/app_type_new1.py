@@ -5,9 +5,9 @@ from folium.plugins import MarkerCluster
 import pandas as pd
 import requests
 from io import StringIO
-# trivial change
+
 # Function to load data from GitHub URL
-@st.cache
+st.cache_data
 def load_original_data():
     url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/anran/Data/final_noduplicates.csv'
     try:
@@ -22,7 +22,6 @@ data = load_original_data()
 # Check if data is loaded successfully
 if data is not None:
     st.write("Data loaded successfully!")
-    st.write(data.head())  # Display the first few rows of the data
 
     # Add new species column
     data['Species_new'] = data['Species'].apply(lambda x: 'Cat' if x == 'Cat' else ('Dog' if x == 'Dog' else 'Others'))
