@@ -9,7 +9,7 @@ from io import StringIO
 # Function to load data from GitHub URL
 @st.cache_data
 def load_original_data():
-    url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/anran/Data/final_noduplicates.csv'
+    url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/final_noduplicates.csv'
     try:
         return pd.read_csv(url)
     except Exception as e:
