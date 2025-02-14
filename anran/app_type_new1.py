@@ -3,8 +3,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 from folium.plugins import MarkerCluster
 import pandas as pd
-import requests
-from io import StringIO
+# import requests
 
 # connect and read the data
 @st.cache_data
