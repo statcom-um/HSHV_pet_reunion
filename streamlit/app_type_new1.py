@@ -33,8 +33,9 @@ if data is not None:
     m = folium.Map(location=[42.2808, -83.7430], zoom_start=12)
 
     # Create marker clusters
+    marker_cluster = MarkerCluster().add_to(m)
     # mCluster_cat = MarkerCluster(name='Cats').add_to(m)
-    mCluster_dog = MarkerCluster(name='Dogs').add_to(m)
+    # mCluster_dog = MarkerCluster(name='Dogs').add_to(m)
     # mCluster_others = MarkerCluster(name='Others').add_to(m)
 
     # Function to get marker color based on species
@@ -58,7 +59,7 @@ if data is not None:
             # icon=folium.Icon(color=get_marker_color(species)),  # Set marker color based on species
             popup=f"Species: {species}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}",  # Example of popup info
             tooltip=f"{species} - {row['Outcome Type']}"  # Example tooltip info
-        )
+        ).add_to(marker_cluster)  # Add marker to cluster
         #if species == 'Cat':
         #    mCluster_cat.add_child(marker)
         #elif species == 'Dog':
