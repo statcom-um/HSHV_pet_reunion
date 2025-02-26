@@ -47,7 +47,6 @@ if data is not None:
             tooltip=f"{row['Species_new']} - {row['Outcome Type']} ({row['Outcome_Year']})"
         ).add_to(marker_cluster)
     
-    st.write("### Original Map with Markers")
     st_folium(m_original, width=700, height=500)
     
     # Heatmap for pets returned
@@ -55,14 +54,14 @@ if data is not None:
     df_returned = data[~data['Returned to Address'].isna()].copy()
     heat_data_returned = df_returned[['lat', 'lon']].dropna().values.tolist()
     HeatMap(heat_data_returned, radius=15).add_to(m_returned)
-    st.write("### Pets Returned Heatmap")
+    st.write("### Heatmap of Pets Returned")
     st_folium(m_returned, width=700, height=500)
     
     # Overall heatmap
     m_overall = folium.Map(location=[center_lat, center_lon], zoom_start=12)
     heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
     HeatMap(heat_data_all, radius=15).add_to(m_overall)
-    st.write("### Overall Heatmap")
+    st.write("### General Heatmap")
     st_folium(m_overall, width=700, height=500)
 
 else:
