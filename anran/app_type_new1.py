@@ -1,7 +1,7 @@
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
-from folium.plugins import MarkerCluster
+from folium.plugins import MarkerCluster, HeatMap
 import pandas as pd
 
 # Connect and read the data
@@ -20,7 +20,7 @@ data = load_original_data()
 # Check if data is loaded successfully
 if data is not None:
     st.write("Data loaded successfully!")
-
+    
     # Convert latitude and longitude to float
     data['lat'] = data['lat'].astype(float)
     data['lon'] = data['lon'].astype(float)
@@ -31,7 +31,7 @@ if data is not None:
     # Filter only dog data
     data['Species_new'] = data['Species'].apply(lambda x: 'Cat' if x == 'Cat' else ('Dog' if x == 'Dog' else 'Others'))
     dog_data = data.loc[data['Species_new'] == 'Dog']
-
+    
     # Define center coordinates (HSHV address)
     center_lat = 42.30638684408865
     center_lon = -83.65495118815288
@@ -45,7 +45,7 @@ if data is not None:
     # Create a separate FeatureGroup for missing dates
     missing_date_group = folium.FeatureGroup(name="Missing Date", show=True)
     missing_date_cluster = MarkerCluster().add_to(missing_date_group)
-
+    
     # Loop through unique years and create a FeatureGroup + MarkerCluster for each
     for year in dog_data['Outcome_Year'].dropna().unique():
         year = int(year)
@@ -67,7 +67,27 @@ if data is not None:
             popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: Missing",
             tooltip=f"{row['Species_new']} - {row['Outcome Type']} (Missing Date)"
         ).add_to(missing_date_cluster)
-
+    
+    # Heatmaps
+    heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
+    heatmap_all = folium.FeatureGroup(name="All Cases Heatmap")
+    HeatMap(heat_data_all, radius=15).add_to(heatmap_all)
+    heatmap_all.add_to(m)
+    
+    # Heatmap for pets returned
+    df_returned = data[~data['Returned to Address'].isna()].copy()
+    heat_data_returned = df_returned[['lat', 'lon']].dropna().values.tolist()
+    returned_layer = folium.FeatureGroup(name="Pets Returned Heatmap")
+    HeatMap(heat_data_returned, radius=15).add_to(returned_layer)
+    returned_layer.add_to(m)
+    
+    # Heatmap for pets not returned
+    df_not_returned = data[data['Returned to Address'].isna()].copy()
+    heat_data_not_returned = df_not_returned[['lat', 'lon']].dropna().values.tolist()
+    not_returned_layer = folium.FeatureGroup(name="Pets Not Returned Heatmap")
+    HeatMap(heat_data_not_returned, radius=15).add_to(not_returned_layer)
+    not_returned_layer.add_to(m)
+    
     # Add feature groups to the map
     for year, fg in year_groups.items():
         m.add_child(fg)
