@@ -36,12 +36,19 @@ if data is not None:
     center_lat = 42.30638684408865
     center_lon = -83.65495118815288
     
-    # Heatmap for all cases
-    m_all = folium.Map(location=[center_lat, center_lon], zoom_start=12)
-    heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
-    HeatMap(heat_data_all, radius=15).add_to(m_all)
-    st.write("### All Cases Heatmap")
-    st_folium(m_all, width=700, height=500)
+    # Original Folium Map with markers
+    m_original = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    marker_cluster = MarkerCluster().add_to(m_original)
+    
+    for _, row in dog_data.iterrows():
+        folium.Marker(
+            location=[row['lat'], row['lon']],
+            popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: {row['Outcome_Year']}",
+            tooltip=f"{row['Species_new']} - {row['Outcome Type']} ({row['Outcome_Year']})"
+        ).add_to(marker_cluster)
+    
+    st.write("### Original Map with Markers")
+    st_folium(m_original, width=700, height=500)
     
     # Heatmap for pets returned
     m_returned = folium.Map(location=[center_lat, center_lon], zoom_start=12)
@@ -51,13 +58,12 @@ if data is not None:
     st.write("### Pets Returned Heatmap")
     st_folium(m_returned, width=700, height=500)
     
-    # Heatmap for pets not returned
-    m_not_returned = folium.Map(location=[center_lat, center_lon], zoom_start=12)
-    df_not_returned = data[data['Returned to Address'].isna()].copy()
-    heat_data_not_returned = df_not_returned[['lat', 'lon']].dropna().values.tolist()
-    HeatMap(heat_data_not_returned, radius=15).add_to(m_not_returned)
-    st.write("### Pets Not Returned Heatmap")
-    st_folium(m_not_returned, width=700, height=500)
+    # Overall heatmap
+    m_overall = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
+    HeatMap(heat_data_all, radius=15).add_to(m_overall)
+    st.write("### Overall Heatmap")
+    st_folium(m_overall, width=700, height=500)
 
 else:
     st.error("Data could not be loaded. Please check the source URL or your internet connection.")
