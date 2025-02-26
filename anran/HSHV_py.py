@@ -1,39 +1,83 @@
-import streamlit as st
-import pandas as pd
 import folium
-from folium.plugins import HeatMap
-from streamlit_folium import folium_static
+import streamlit as st
+from streamlit_folium import st_folium
+from folium.plugins import MarkerCluster
+import pandas as pd
 
+# Connect and read the data
+@st.cache_data
+def load_original_data():
+    url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/anran/Data/final_noduplicates.csv'
+    try:
+        return pd.read_csv(url)
+    except Exception as e:
+        st.error(f"Failed to load data from GitHub. Error: {e}")
+        return None
 
-pd.read_csv(r'Data\final_noduplicates.csv')
-final_noduplicates = load_data()
+# Load the data
+data = load_original_data()
 
-# Streamlit page configuration
-st.set_page_config(page_title='Pet Return Heatmap', page_icon=':dog:')
-st.title("Pet Return Heatmap")
+# Check if data is loaded successfully
+if data is not None:
+    st.write("Data loaded successfully!")
 
-# Create heatmaps
-def create_heatmap(df, title):
-    map_center = [df['lat'].mean(), df['lon'].mean()]
-    m = folium.Map(location=map_center, zoom_start=10)
-    heat_data = df[['lat', 'lon']].values.tolist()
-    HeatMap(heat_data, radius=15).add_to(m)
-    return m
+    # Convert latitude and longitude to float
+    data['lat'] = data['lat'].astype(float)
+    data['lon'] = data['lon'].astype(float)
+    
+    # Extract year from "Outcome Date"
+    data['Outcome_Year'] = pd.to_datetime(data['Outcome Date'], errors='coerce').dt.year
+    
+    # Filter only dog data
+    data['Species_new'] = data['Species'].apply(lambda x: 'Cat' if x == 'Cat' else ('Dog' if x == 'Dog' else 'Others'))
+    dog_data = data.loc[data['Species_new'] == 'Dog']
 
-# Sidebar filter
-option = st.sidebar.radio("Select Heatmap Type:", ("All Pets", "Pets Returned", "Pets Not Returned"))
+    # Define center coordinates (HSHV address)
+    center_lat = 42.30638684408865
+    center_lon = -83.65495118815288
+    
+    # Create map
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    
+    # Dictionary to store feature groups by year
+    year_groups = {}
 
-if option == "All Pets":
-    st.subheader("Heatmap of All Reported Pets")
-    heatmap = create_heatmap(final_noduplicates, "All Pets")
-elif option == "Pets Returned":
-    df_returned = final_noduplicates[~final_noduplicates['Returned to Address'].isna()]
-    st.subheader("Heatmap of Pets That Were Returned")
-    heatmap = create_heatmap(df_returned, "Pets Returned")
+    # Create a separate FeatureGroup for missing dates
+    missing_date_group = folium.FeatureGroup(name="Missing Date", show=True)
+    missing_date_cluster = MarkerCluster().add_to(missing_date_group)
+
+    # Loop through unique years and create a FeatureGroup + MarkerCluster for each
+    for year in dog_data['Outcome_Year'].dropna().unique():
+        year = int(year)
+        year_groups[year] = folium.FeatureGroup(name=str(year), show=True)
+        marker_cluster = MarkerCluster().add_to(year_groups[year])
+
+        # Add markers to the corresponding cluster
+        for _, row in dog_data[dog_data['Outcome_Year'] == year].iterrows():
+            folium.Marker(
+                location=[row['lat'], row['lon']],
+                popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: {year}",
+                tooltip=f"{row['Species_new']} - {row['Outcome Type']} ({year})"
+            ).add_to(marker_cluster)
+
+    # Add markers with missing dates to their own cluster
+    for _, row in dog_data[dog_data['Outcome_Year'].isna()].iterrows():
+        folium.Marker(
+            location=[row['lat'], row['lon']],
+            popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: Missing",
+            tooltip=f"{row['Species_new']} - {row['Outcome Type']} (Missing Date)"
+        ).add_to(missing_date_cluster)
+
+    # Add feature groups to the map
+    for year, fg in year_groups.items():
+        m.add_child(fg)
+    m.add_child(missing_date_group)
+
+    # Add layer control
+    folium.LayerControl(collapsed=False).add_to(m)
+
+    # Render Folium map in Streamlit
+    st_folium(m, width=700, height=500)
+
 else:
-    df_not_returned = final_noduplicates[final_noduplicates['Returned to Address'].isna()]
-    st.subheader("Heatmap of Pets Not Returned")
-    heatmap = create_heatmap(df_not_returned, "Pets Not Returned")
-
-# Display map
-folium_static(heatmap)
+    st.error("Data could not be loaded. Please check the source URL or your internet connection.")
