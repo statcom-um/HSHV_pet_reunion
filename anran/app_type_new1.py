@@ -77,6 +77,7 @@ if data is not None:
     folium.LayerControl(collapsed=False).add_to(m_original)
     
    # Render Folium map in Streamlit
+    st.write("### Heatmap of Pets Filter by Year")
     st_folium(m_original, width=700, height=500)
     
                
