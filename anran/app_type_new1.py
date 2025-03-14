@@ -38,17 +38,48 @@ if data is not None:
     
     # Original Folium Map with markers
     m_original = folium.Map(location=[center_lat, center_lon], zoom_start=12)
-    marker_cluster = MarkerCluster().add_to(m_original)
-    
-    for _, row in dog_data.iterrows():
+
+    # Dictionary to store feature groups by year
+    year_groups = {}
+
+    # Create a separate FeatureGroup for missing dates
+    missing_date_group = folium.FeatureGroup(name="Missing Date", show=True)
+    missing_date_cluster = MarkerCluster().add_to(missing_date_group)
+
+    # Loop through unique years and create a FeatureGroup + MarkerCluster for each
+    for year in dog_data['Outcome_Year'].dropna().unique():
+        year = int(year)
+        year_groups[year] = folium.FeatureGroup(name=str(year), show=True)
+        marker_cluster = MarkerCluster().add_to(year_groups[year])
+
+        # Add markers to the corresponding cluster
+        for _, row in dog_data[dog_data['Outcome_Year'] == year].iterrows():
+            folium.Marker(
+                location=[row['lat'], row['lon']],
+                popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: {year}",
+                tooltip=f"{row['Species_new']} - {row['Outcome Type']} ({year})"
+            ).add_to(marker_cluster)
+            
+    # Add markers with missing dates to their own cluster
+    for _, row in dog_data[dog_data['Outcome_Year'].isna()].iterrows():
         folium.Marker(
             location=[row['lat'], row['lon']],
-            popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: {row['Outcome_Year']}",
-            tooltip=f"{row['Species_new']} - {row['Outcome Type']} ({row['Outcome_Year']})"
-        ).add_to(marker_cluster)
+            popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: Missing",
+            tooltip=f"{row['Species_new']} - {row['Outcome Type']} (Missing Date)"
+        ).add_to(missing_date_cluster)            
+ 
+     # Add feature groups to the map
+    for year, fg in year_groups.items():
+        m_original.add_child(fg)
+    m_original.add_child(missing_date_group)
+
+    # Add layer control
+    folium.LayerControl(collapsed=False).add_to(m_original)
     
+   # Render Folium map in Streamlit
     st_folium(m_original, width=700, height=500)
     
+               
     # Heatmap for pets returned
     m_returned = folium.Map(location=[center_lat, center_lon], zoom_start=12)
     df_returned = data[~data['Returned to Address'].isna()].copy()
