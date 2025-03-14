@@ -1,12 +1,10 @@
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
-from folium.plugins import MarkerCluster
+from folium.plugins import MarkerCluster, HeatMap
 import pandas as pd
-import requests
-from io import StringIO
 
-# Function to load data from GitHub URL
+# Connect and read the data
 @st.cache_data
 def load_original_data():
     url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/anran/Data/final_noduplicates.csv'
@@ -22,48 +20,81 @@ data = load_original_data()
 # Check if data is loaded successfully
 if data is not None:
     st.write("Data loaded successfully!")
-
-    # Add new species column
+    
+    # Convert latitude and longitude to float
+    data['lat'] = data['lat'].astype(float)
+    data['lon'] = data['lon'].astype(float)
+    
+    # Extract year from "Outcome Date"
+    data['Outcome_Year'] = pd.to_datetime(data['Outcome Date'], errors='coerce').dt.year
+    
+    # Filter only dog data
     data['Species_new'] = data['Species'].apply(lambda x: 'Cat' if x == 'Cat' else ('Dog' if x == 'Dog' else 'Others'))
+    dog_data = data.loc[data['Species_new'] == 'Dog']
+    
+    # Define center coordinates (HSHV address)
+    center_lat = 42.30638684408865
+    center_lon = -83.65495118815288
+    
+    # Original Folium Map with markers
+    m_original = folium.Map(location=[center_lat, center_lon], zoom_start=12)
 
-    # Create a map
-    m = folium.Map(location=[42.2808, -83.7430], zoom_start=12)
+    # Dictionary to store feature groups by year
+    year_groups = {}
 
-    # Create marker clusters
-    mCluster_cat = MarkerCluster(name='Cats').add_to(m)
-    mCluster_dog = MarkerCluster(name='Dogs').add_to(m)
-    mCluster_others = MarkerCluster(name='Others').add_to(m)
+    # Create a separate FeatureGroup for missing dates
+    missing_date_group = folium.FeatureGroup(name="Missing Date", show=True)
+    missing_date_cluster = MarkerCluster().add_to(missing_date_group)
 
-    # Function to get marker color based on species
-    def get_marker_color(species):
-        if species == 'Cat':
-            return 'blue'
-        elif species == 'Dog':
-            return 'green'
-        else:
-            return 'red'
+    # Loop through unique years and create a FeatureGroup + MarkerCluster for each
+    for year in dog_data['Outcome_Year'].dropna().unique():
+        year = int(year)
+        year_groups[year] = folium.FeatureGroup(name=str(year), show=True)
+        marker_cluster = MarkerCluster().add_to(year_groups[year])
 
-    # Add custom markers for each row in the DataFrame
-    for idx, row in data.iterrows():
-        species = row['Species_new']  # Get the species
-        lat = row['lat']  # Get latitude
-        lon = row['lon']  # Get longitude
+        # Add markers to the corresponding cluster
+        for _, row in dog_data[dog_data['Outcome_Year'] == year].iterrows():
+            folium.Marker(
+                location=[row['lat'], row['lon']],
+                popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: {year}",
+                tooltip=f"{row['Species_new']} - {row['Outcome Type']} ({year})"
+            ).add_to(marker_cluster)
+            
+    # Add markers with missing dates to their own cluster
+    for _, row in dog_data[dog_data['Outcome_Year'].isna()].iterrows():
+        folium.Marker(
+            location=[row['lat'], row['lon']],
+            popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: Missing",
+            tooltip=f"{row['Species_new']} - {row['Outcome Type']} (Missing Date)"
+        ).add_to(missing_date_cluster)            
+ 
+     # Add feature groups to the map
+    for year, fg in year_groups.items():
+        m_original.add_child(fg)
+    m_original.add_child(missing_date_group)
 
-        # Create a marker for each row, using the appropriate color
-        marker = folium.Marker(
-            location=[lat, lon],
-            icon=folium.Icon(color=get_marker_color(species)),  # Set marker color based on species
-            popup=f"Species: {species}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}",  # Example of popup info
-            tooltip=f"{species} - {row['Outcome Type']}"  # Example tooltip info
-        )
-        if species == 'Cat':
-            mCluster_cat.add_child(marker)
-        elif species == 'Dog':
-            mCluster_dog.add_child(marker)
-        else:
-            mCluster_others.add_child(marker)
+    # Add layer control
+    folium.LayerControl(collapsed=False).add_to(m_original)
+    
+   # Render Folium map in Streamlit
+    st.write("### Heatmap of Pets Filter by Year")
+    st_folium(m_original, width=700, height=500)
+    
+               
+    # Heatmap for pets returned
+    m_returned = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    df_returned = data[~data['Returned to Address'].isna()].copy()
+    heat_data_returned = df_returned[['lat', 'lon']].dropna().values.tolist()
+    HeatMap(heat_data_returned, radius=15).add_to(m_returned)
+    st.write("### Heatmap of Pets Returned")
+    st_folium(m_returned, width=700, height=500)
+    
+    # Overall heatmap
+    m_overall = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
+    HeatMap(heat_data_all, radius=15).add_to(m_overall)
+    st.write("### General Heatmap")
+    st_folium(m_overall, width=700, height=500)
 
-    # Display the map
-    st_folium(m, width=700, height=500)
 else:
     st.error("Data could not be loaded. Please check the source URL or your internet connection.")
