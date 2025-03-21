@@ -1,7 +1,7 @@
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
-from folium.plugins import MarkerCluster, HeatMap
+from folium.plugins import MarkerCluster, HeatMap, FastMarkerCluster
 import pandas as pd
 
 # Connect and read the data
@@ -17,6 +17,7 @@ def load_original_data():
 # Load the data
 data = load_original_data()
 
+
 # Check if data is loaded successfully
 if data is not None:
     st.write("Data loaded successfully!")
@@ -24,6 +25,9 @@ if data is not None:
     # Convert latitude and longitude to float
     data['lat'] = data['lat'].astype(float)
     data['lon'] = data['lon'].astype(float)
+    
+    # Returned to Address (RTO)
+    data['RTO'] = data['Returned to Address'].notna().astype(int)
     
     # Extract year from "Outcome Date"
     data['Outcome_Year'] = pd.to_datetime(data['Outcome Date'], errors='coerce').dt.year
@@ -36,6 +40,22 @@ if data is not None:
     center_lat = 42.30638684408865
     center_lon = -83.65495118815288
     
+    # Set the callback function for marker color based on RTO
+    callback = """\
+    function (row) {
+        var icon, marker;
+        var color = row[2] === 1 ? "red" : "blue";  // If RTO = 1 -> red, else blue
+        icon = L.AwesomeMarkers.icon({
+            icon: "map-marker",
+            markerColor: color
+        });
+        marker = L.marker(new L.LatLng(row[0], row[1]));
+        marker.setIcon(icon);
+        return marker;
+    };
+    """
+    
+    ### MAP 1: Original with Clustering (m_original)
     # Original Folium Map with markers
     m_original = folium.Map(location=[center_lat, center_lon], zoom_start=12)
 
@@ -44,30 +64,17 @@ if data is not None:
 
     # Create a separate FeatureGroup for missing dates
     missing_date_group = folium.FeatureGroup(name="Missing Date", show=True)
-    missing_date_cluster = MarkerCluster().add_to(missing_date_group)
+    missing_date_data = dog_data[dog_data['Outcome_Year'].isna()][['lat', 'lon', 'RTO']].dropna().values.tolist()
+    FastMarkerCluster(missing_date_data, callback=callback).add_to(missing_date_group)
 
     # Loop through unique years and create a FeatureGroup + MarkerCluster for each
     for year in dog_data['Outcome_Year'].dropna().unique():
         year = int(year)
         year_groups[year] = folium.FeatureGroup(name=str(year), show=True)
-        marker_cluster = MarkerCluster().add_to(year_groups[year])
+        year_data = dog_data[dog_data['Outcome_Year'] == year][['lat', 'lon', 'RTO']].dropna().values.tolist()
+        
+        FastMarkerCluster(year_data, callback=callback).add_to(year_groups[year])
 
-        # Add markers to the corresponding cluster
-        for _, row in dog_data[dog_data['Outcome_Year'] == year].iterrows():
-            folium.Marker(
-                location=[row['lat'], row['lon']],
-                popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: {year}",
-                tooltip=f"{row['Species_new']} - {row['Outcome Type']} ({year})"
-            ).add_to(marker_cluster)
-            
-    # Add markers with missing dates to their own cluster
-    for _, row in dog_data[dog_data['Outcome_Year'].isna()].iterrows():
-        folium.Marker(
-            location=[row['lat'], row['lon']],
-            popup=f"Species: {row['Species_new']}<br>Outcome: {row['Outcome Type']}<br>Gender: {row['Gender']}<br>Year: Missing",
-            tooltip=f"{row['Species_new']} - {row['Outcome Type']} (Missing Date)"
-        ).add_to(missing_date_cluster)            
- 
      # Add feature groups to the map
     for year, fg in year_groups.items():
         m_original.add_child(fg)
@@ -76,9 +83,52 @@ if data is not None:
     # Add layer control
     folium.LayerControl(collapsed=False).add_to(m_original)
     
-   # Render Folium map in Streamlit
-    st.write("### Heatmap of Pets Filter by Year")
+    
+    ### MAP 2: Without Clustering (m_noclust)
+    m_noclust = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    year_groups_no_clust = {}
+
+    missing_date_group_noclust = folium.FeatureGroup(name="Missing Date", show=True)
+    for row in missing_date_data:
+        color = "red" if row[2] == 1 else "blue"
+        folium.CircleMarker(
+            location=[row[0], row[1]],
+            radius=5,
+            color=color,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.6,
+            weight=1
+        ).add_to(missing_date_group_noclust)
+
+    for year in dog_data['Outcome_Year'].dropna().unique():
+        year = int(year)
+        year_groups_no_clust[year] = folium.FeatureGroup(name=str(year), show=True)
+        year_data = dog_data[dog_data['Outcome_Year'] == year][['lat', 'lon', 'RTO']].dropna().values.tolist()
+        
+        for row in year_data:
+            color = "red" if row[2] == 1 else "blue"
+            folium.CircleMarker(
+                location=[row[0], row[1]],
+                radius=5,
+                color=color,
+                fill=True,
+                fill_color=color,
+                fill_opacity=0.6,
+                weight=1
+            ).add_to(year_groups_no_clust[year])
+
+    for year, fg in year_groups_no_clust.items():
+        m_noclust.add_child(fg)
+    m_noclust.add_child(missing_date_group_noclust)
+    folium.LayerControl(collapsed=False).add_to(m_noclust)
+
+    # Render both maps in Streamlit
+    st.write("### Heatmap of Pets Filter by Year (with clustering)")
     st_folium(m_original, width=700, height=500)
+
+    st.write("### Heatmap of Pets Filter by Year (without clustering)")
+    st_folium(m_noclust, width=700, height=500)
     
                
     # Heatmap for pets returned
