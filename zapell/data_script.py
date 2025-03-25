@@ -48,7 +48,7 @@ def get_google_maps_data(df, API_KEY=''):
     return incorrect_coords_df
 
 
-def process_data(csv_file='', API_KEY=''):
+def process_data(csv_file='', API_KEY=None):
     """
     Processes the data from a CSV file, corrects coordinates using Google Maps API, and filters the data.
 
@@ -71,14 +71,15 @@ def process_data(csv_file='', API_KEY=''):
     df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
 
     # Change Incorrect Coordinates and Addresses
-    incorrect_coords_df = get_google_maps_data(df, API_KEY)
-    df.loc[incorrect_coords_df.index, 'lat'] = incorrect_coords_df['Latitude']
-    df.loc[incorrect_coords_df.index, 'lon'] = incorrect_coords_df['Longitude']
-    df.loc[incorrect_coords_df.index, 'address_google'] = incorrect_coords_df['google_address_corrected']   
+    if API_KEY is not None:
+        incorrect_coords_df = get_google_maps_data(df, API_KEY)
+        df.loc[incorrect_coords_df.index, 'lat'] = incorrect_coords_df['Latitude']
+        df.loc[incorrect_coords_df.index, 'lon'] = incorrect_coords_df['Longitude']
+        df.loc[incorrect_coords_df.index, 'address_google'] = incorrect_coords_df['google_address_corrected']   
 
-    df['pnt'] = df['lon'].astype(str) + ', ' + df['lat'].astype(str)
+        df['pnt'] = df['lon'].astype(str) + ', ' + df['lat'].astype(str)
 
-    df[df['address_google'] == 'Michigan, USA']
+        df[df['address_google'] == 'Michigan, USA']
 
     # Remove animals found at HSHV
     # Remove Out of State Observations
