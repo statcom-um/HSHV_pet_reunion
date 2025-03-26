@@ -133,20 +133,29 @@ if data is not None:
     st_folium(m_noclust, width=700, height=500)
     
                
-    # Heatmap for pets returned
-    m_returned = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+  heatmap_option = st.selectbox("Select Heatmap Type:", ["Overall", "Pets Returned", "Pets Not Returned"])
+
+# Base map
+m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+
+if heatmap_option == "Overall":
+    heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
+    HeatMap(heat_data_all, radius=15).add_to(m)
+    st.write("### General Heatmap")
+
+elif heatmap_option == "Pets Returned":
     df_returned = data[~data['Returned to Address'].isna()].copy()
     heat_data_returned = df_returned[['lat', 'lon']].dropna().values.tolist()
-    HeatMap(heat_data_returned, radius=15).add_to(m_returned)
+    HeatMap(heat_data_returned, radius=15).add_to(m)
     st.write("### Heatmap of Pets Returned")
-    st_folium(m_returned, width=700, height=500)
-    
-    # Overall heatmap
-    m_overall = folium.Map(location=[center_lat, center_lon], zoom_start=12)
-    heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
-    HeatMap(heat_data_all, radius=15).add_to(m_overall)
-    st.write("### General Heatmap")
-    st_folium(m_overall, width=700, height=500)
+
+elif heatmap_option == "Pets Not Returned":
+    df_nodup_notreturned = final_noduplicates[final_noduplicates['Returned to Address'].isna()].copy()
+    heat_data_notreturned = df_nodup_notreturned[['lat', 'lon']].dropna().values.tolist()
+    HeatMap(heat_data_notreturned, radius=15).add_to(m)
+    st.write("### Heatmap of Pets Not Returned")
+
+st_folium(m, width=700, height=500)
 
 else:
     st.error("Data could not be loaded. Please check the source URL or your internet connection.")
