@@ -133,7 +133,7 @@ if data is not None:
     st_folium(m_noclust, width=700, height=500)
     
                
-  heatmap_option = st.selectbox("Select Heatmap Type:", ["Overall", "Pets Returned", "Pets Not Returned"])
+    heatmap_option = st.selectbox("Select Heatmap Type:", ["Overall", "Pets Returned", "Pets Not Returned"])
 
     # Base map
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
