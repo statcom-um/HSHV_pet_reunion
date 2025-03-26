@@ -150,7 +150,7 @@ if data is not None:
         st.write("### Heatmap of Pets Returned")
     
     elif heatmap_option == "Pets Not Returned":
-        df_nodup_notreturned = final_noduplicates[final_noduplicates['Returned to Address'].isna()].copy()
+        df_nodup_notreturned = data[data['Returned to Address'].isna()].copy()
         heat_data_notreturned = df_nodup_notreturned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_notreturned, radius=15).add_to(m)
         st.write("### Heatmap of Pets Not Returned")
