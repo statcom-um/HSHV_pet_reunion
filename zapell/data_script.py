@@ -1,95 +1,42 @@
 import pandas as pd
-import googlemaps
+import numpy as np
 
-def get_google_maps_data(df, API_KEY=''):
+
+def remove_dupes(df):
+    # need preprocessing that builds FullHSHVData2 
     """
-    Fetches corrected latitude, longitude, and addresses from Google Maps API for incorrect coordinates.
+    Removes duplicate records and non-granular addresses from the DataFrame.
 
     Parameters:
-    df (pd.DataFrame): DataFrame containing the data with incorrect coordinates.
-    API_KEY (str): Google Maps API key.
+    df (pd.DataFrame): Input DataFrame containing animal data.
 
     Returns:
-    pd.DataFrame: DataFrame with incorrect latitude, longitude, and addresses.
+    pd.DataFrame: DataFrame with duplicates and non-granular addresses removed.
     """
-    gmaps = googlemaps.Client(key=API_KEY)
-    condition_1 = ~df['address_google'].str.contains('MI|Michigan', na=False)
-    condition_2 = df['address_google'] == 'Michigan, USA'
-    incorrect_coords_df = df[condition_1 | condition_2].copy()
+    # Identify rows with missing zip codes
+    df['address_no_zipcode'] = ~df['address_google'].str.contains(r'\b\d{5}\b', regex=True, na=False)
 
-    latitudes = []
-    longitudes = []
-    addresses = []
+    # Identify rows with non-granular addresses
+    granular_keywords = r'Ave|Rd|Dr|Trail|St|Pkwy|&|Park|Lake'
+    df['no_full_address'] = ~df['address_google'].str.contains(granular_keywords, regex=True, na=False)
 
-    # Iterate over each row in the DataFrame to get geocode data
-    for index, row in incorrect_coords_df.iterrows():
-        address = f"{row['Location Found']}, {row['Jurisdiction In']}, MI, USA"
-        try:
-            geocode_result = gmaps.geocode(address)
-            if geocode_result:
-                location = geocode_result[0]['geometry']['location']
-                latitudes.append(location['lat'])
-                longitudes.append(location['lng'])
-                addresses.append(geocode_result[0]['formatted_address'])
-            else:
-                latitudes.append(None)
-                longitudes.append(None)
-                addresses.append(None)
-        except Exception as e:
-            print(f"Error geocoding {address}: {e}")
-            latitudes.append(None)
-            longitudes.append(None)
-            addresses.append(None)
+    # Filter out rows with missing zip codes and non-granular addresses
+    non_granular_indices = df[(df['address_no_zipcode']) & (df['no_full_address'])].index
+    df = df.drop(non_granular_indices)
 
-    incorrect_coords_df.loc[:, 'Latitude'] = latitudes
-    incorrect_coords_df.loc[:, 'Longitude'] = longitudes
-    incorrect_coords_df.loc[:, 'google_address_corrected'] = addresses
+    # Drop temporary columns used for filtering
+    df = df.drop(columns=['address_no_zipcode', 'no_full_address'], errors='ignore')
 
-    return incorrect_coords_df
-
-
-def process_data(csv_file='', API_KEY=None):
-    """
-    Processes the data from a CSV file, corrects coordinates using Google Maps API, and filters the data.
-
-    Parameters:
-    csv_file (str): Path to the CSV file containing the data.
-    API_KEY (str): Google Maps API key.
-
-    Returns:
-    pd.DataFrame: Processed DataFrame with corrected coordinates and filtered data.
-    """
-    df = pd.read_csv(csv_file)
-    #Rewrite the addresses so they are more interpretable by GeocodeAPI
-    df['Jurisdiction In'] = df['Jurisdiction In'].replace(r'^WC-', '', regex=True)  # Remove WC-
-    df['Jurisdiction In'] = df['Jurisdiction In'].replace(r'\s+(Twp|City)$', '', regex=True)
-    df['Location Found'] = df['Location Found'].replace('/', ' and ', regex=True)
-
-    # Get latitude and longitutde for each address
-    df[['lon', 'lat']] = df['pnt'].str.split(', ', expand=True)
-    df['lat'] = pd.to_numeric(df['lat'], errors='coerce')  
-    df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
-
-    # Change Incorrect Coordinates and Addresses
-    if API_KEY is not None:
-        incorrect_coords_df = get_google_maps_data(df, API_KEY)
-        df.loc[incorrect_coords_df.index, 'lat'] = incorrect_coords_df['Latitude']
-        df.loc[incorrect_coords_df.index, 'lon'] = incorrect_coords_df['Longitude']
-        df.loc[incorrect_coords_df.index, 'address_google'] = incorrect_coords_df['google_address_corrected']   
-
-        df['pnt'] = df['lon'].astype(str) + ', ' + df['lat'].astype(str)
-
-        df[df['address_google'] == 'Michigan, USA']
-
-    # Remove animals found at HSHV
-    # Remove Out of State Observations
-    df = df[~df['Location Found'].str.contains('HSHV', na=False)]
-    df = df[df['address_google'].str.contains('MI', na=False)]    
+    # Remove duplicates based on specific columns
+    dup_factors = ['Intake Date', 'Species', 'Primary Breed', 'Location Found', 'Returned to Address']
+    df = df.drop_duplicates(subset=dup_factors, keep='first').reset_index(drop=True)
 
     return df
 
 
 def get_rto(df):
+    # remove dupes
+    df = remove_dupes(df)
     df['Returned'] = np.where(df['Outcome Type'].str.contains('Stray Reclaim'),1,0)
     # set index for ease to get duplicates
     df = df.set_index("Animal #")
