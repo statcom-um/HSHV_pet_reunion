@@ -6,6 +6,8 @@ st.set_page_config(
     layout="wide",
 )
 
+st.sidebar.success("Select a demo above.")
+
 "# HSHV streamlit-app"
 
 """Intros"""
