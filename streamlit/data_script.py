@@ -6,6 +6,7 @@ def remove_dupes(df):
     # need preprocessing that builds FullHSHVData2 
     """
     Removes duplicate records and non-granular addresses from the DataFrame.
+    If certain columns are not present, just return the DataFrame.
 
     Parameters:
     df (pd.DataFrame): Input DataFrame containing animal data.
@@ -13,24 +14,29 @@ def remove_dupes(df):
     Returns:
     pd.DataFrame: DataFrame with duplicates and non-granular addresses removed.
     """
-    # Identify rows with missing zip codes
-    df['address_no_zipcode'] = ~df['address_google'].str.contains(r'\b\d{5}\b', regex=True, na=False)
+    # Check if 'address_google' exists in the DataFrame
+    if 'address_google' in df.columns:
+        # Identify rows with missing zip codes
+        df['address_no_zipcode'] = ~df['address_google'].str.contains(r'\b\d{5}\b', regex=True, na=False)
 
-    # Identify rows with non-granular addresses
-    granular_keywords = r'Ave|Rd|Dr|Trail|St|Pkwy|&|Park|Lake'
-    df['no_full_address'] = ~df['address_google'].str.contains(granular_keywords, regex=True, na=False)
+        # Identify rows with non-granular addresses
+        granular_keywords = r'Ave|Rd|Dr|Trail|St|Pkwy|&|Park|Lake'
+        df['no_full_address'] = ~df['address_google'].str.contains(granular_keywords, regex=True, na=False)
 
-    # Filter out rows with missing zip codes and non-granular addresses
-    non_granular_indices = df[(df['address_no_zipcode']) & (df['no_full_address'])].index
-    df = df.drop(non_granular_indices)
+        # Filter out rows with missing zip codes and non-granular addresses
+        non_granular_indices = df[(df['address_no_zipcode']) & (df['no_full_address'])].index
+        df = df.drop(non_granular_indices)
 
-    # Drop temporary columns used for filtering
-    df = df.drop(columns=['address_no_zipcode', 'no_full_address'], errors='ignore')
+        # Drop temporary columns used for filtering
+        df = df.drop(columns=['address_no_zipcode', 'no_full_address'], errors='ignore')
 
     # Remove duplicates based on specific columns
     dup_factors = ['Intake Date', 'Species', 'Primary Breed', 'Location Found', 'Returned to Address']
-    df = df.drop_duplicates(subset=dup_factors, keep='first').reset_index(drop=True)
 
+     # Check if all columns in dup_factors exist in the DataFrame
+    if all(col in df.columns for col in dup_factors):
+        # Remove duplicates based on specific columns
+        df = df.drop_duplicates(subset=dup_factors, keep='first').reset_index(drop=True)
     return df
 
 
@@ -58,3 +64,5 @@ def get_rto(df):
     dog_yearly['rto'] = 100.0*dog_yearly.Returned/dog_yearly.Total
 
     return dog_yearly
+
+
