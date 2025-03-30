@@ -6,6 +6,8 @@ from data_script import get_rto
 # Streamlit app
 st.title("Return-to-Owner (RTO) Analysis")
 
+st.text("Required csv columns: 'Outcome Type', 'Animal #', 'Outcome Date', 'Intake Date', 'Species'")
+
 # File uploader
 uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
