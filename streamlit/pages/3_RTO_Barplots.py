@@ -65,6 +65,11 @@ tooltip_html = {
         'color': 'white'
     }
 }
+r = pdk.Deck(
+    layers=[hex_layer],
+    initial_view_state=view_state,
+    tooltip=tooltip_html
+)
 
 # Display PyDeck plot in Streamlit
 st.subheader("Hexagon Plot of Not Returned Dogs")
