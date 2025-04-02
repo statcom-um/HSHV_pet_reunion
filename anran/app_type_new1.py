@@ -139,18 +139,18 @@ if data is not None:
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
     
     if heatmap_option == "Overall":
-        heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
+        heat_data_all = dog_data[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_all, radius=15).add_to(m)
         st.write("### General Heatmap")
     
     elif heatmap_option == "Pets Returned":
-        df_returned = data[~data['Returned to Address'].isna()].copy()
+        df_returned = dog_data[~dog_data['Returned to Address'].isna()].copy()
         heat_data_returned = df_returned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_returned, radius=15).add_to(m)
         st.write("### Heatmap of Pets Returned")
     
     elif heatmap_option == "Pets Not Returned":
-        df_nodup_notreturned = data[data['Returned to Address'].isna()].copy()
+        df_nodup_notreturned = dog_data[data['Returned to Address'].isna()].copy()
         heat_data_notreturned = df_nodup_notreturned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_notreturned, radius=15).add_to(m)
         st.write("### Heatmap of Pets Not Returned")
