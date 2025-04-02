@@ -73,4 +73,5 @@ r = pdk.Deck(
 
 # Display PyDeck plot in Streamlit
 st.subheader("Hexagon Plot of Not Returned Dogs")
+st.write("Potential problem areas are shown by where the bars are both tall and red. If a bar is red and short, it's because of lack of data in the area.")
 st.pydeck_chart(r)
