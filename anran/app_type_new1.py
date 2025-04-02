@@ -124,16 +124,16 @@ if data is not None:
     folium.LayerControl(collapsed=False).add_to(m_noclust)
 
     # Render both maps in Streamlit
-    st.write("### Heatmap of Pets Filter by Year (with clustering)")
+    st.write("### Heatmap of Dogs Filtered by Year (with clustering)")
     st.write("Red: Returned to Owner; Blue: Not Returned")   
     st_folium(m_original, width=700, height=500)
 
-    st.write("### Heatmap of Pets Filter by Year (without clustering)")
+    st.write("### Heatmap of Dogs Filtered by Year (without clustering)")
     st.write("Red: Returned to Owner; Blue: Not Returned")
     st_folium(m_noclust, width=700, height=500)
     
                
-    heatmap_option = st.selectbox("Select Heatmap Type:", ["Overall", "Pets Returned", "Pets Not Returned"])
+    heatmap_option = st.selectbox("Select Heatmap Type:", ["Overall", "Dogs Returned", "Dogs Not Returned"])
 
     # Base map
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
@@ -143,17 +143,17 @@ if data is not None:
         HeatMap(heat_data_all, radius=15).add_to(m)
         st.write("### General Heatmap")
     
-    elif heatmap_option == "Pets Returned":
+    elif heatmap_option == "Dogs Returned":
         df_returned = dog_data[~dog_data['Returned to Address'].isna()].copy()
         heat_data_returned = df_returned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_returned, radius=15).add_to(m)
-        st.write("### Heatmap of Pets Returned")
+        st.write("### Heatmap of Dogs Returned")
     
-    elif heatmap_option == "Pets Not Returned":
+    elif heatmap_option == "Dogs Not Returned":
         df_nodup_notreturned = dog_data[data['Returned to Address'].isna()].copy()
         heat_data_notreturned = df_nodup_notreturned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_notreturned, radius=15).add_to(m)
-        st.write("### Heatmap of Pets Not Returned")
+        st.write("### Heatmap of Dogs Not Returned")
     
     st_folium(m, width=700, height=500)
 
