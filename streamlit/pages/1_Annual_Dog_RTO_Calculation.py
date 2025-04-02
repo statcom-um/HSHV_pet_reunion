@@ -22,6 +22,8 @@ if uploaded_file is not None:
         # Process the data using get_rto
         rto_data = get_rto(df)
 
+        # try resetting index for plot later
+        rto_data.set_index("year")
         # Display the results
         st.subheader("Yearly RTO Data")
         st.dataframe(rto_data)
