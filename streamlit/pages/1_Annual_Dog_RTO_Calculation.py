@@ -30,7 +30,9 @@ if uploaded_file is not None:
         
         # Reset index and rename the column to 'year'
         rto_data = rto_data.reset_index().rename(columns={'index': 'year'})
-        st.write(rto_data.columns.tolist())
+        # Ensure 'year' column is a datetime year type
+        rto_data['year'] = pd.to_datetime(rto_data['year'], format='%Y').dt.year
+        
         # Plot the RTO rate
         st.subheader("RTO Rate Over Time")
         #st.line_chart(rto_data['rto'], x="year")
