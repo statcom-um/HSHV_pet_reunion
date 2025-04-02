@@ -27,7 +27,6 @@ data = load_original_data()
 
 # Check if data is loaded successfully
 if data is not None:
-    st.write("Data loaded successfully!")
     
     # Convert latitude and longitude to float
     data['lat'] = data['lat'].astype(float)
