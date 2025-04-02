@@ -73,5 +73,7 @@ r = pdk.Deck(
 
 # Display PyDeck plot in Streamlit
 st.subheader("Hexagon Plot of Not Returned Dogs")
+st.write("Click and drag to move the map and view from different angles.")
+st.write("Taller bars means more dogs were found in the area. Darker red means fewer of them were returned to owner.")
 st.write("Potential problem areas are shown by where the bars are both tall and red. If a bar is red and short, it's because of lack of data in the area.")
 st.pydeck_chart(r)
