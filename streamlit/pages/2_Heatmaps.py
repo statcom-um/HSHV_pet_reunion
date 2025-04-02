@@ -130,11 +130,11 @@ if data is not None:
     folium.LayerControl(collapsed=False).add_to(m_noclust)
 
     # Render both maps in Streamlit
-    st.write("### Heatmap of Pets Filter by Year (with clustering)")
+    st.write("### Heatmap of Dogs Filtered by Year (with clustering)")
     st.write("Red: Returned to Owner; Blue: Not Returned")   
     st_folium(m_original, width=700, height=500)
 
-    st.write("### Heatmap of Pets Filter by Year (without clustering)")
+    st.write("### Heatmap of Dogs Filtered by Year (without clustering)")
     st.write("Red: Returned to Owner; Blue: Not Returned")
     st_folium(m_noclust, width=700, height=500)
     
