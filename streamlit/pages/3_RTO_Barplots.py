@@ -9,6 +9,7 @@ from pydeck.types import String
 import numpy as np
 
 # connect and read the data
+@st.cache_data
 def load_original_data():
     url = 'https://raw.githubusercontent.com/statcom-um/HSHV_pet_reunion/refs/heads/main/anran/Data/final_noduplicates.csv'
     try:
@@ -65,12 +66,6 @@ tooltip_html = {
     }
 }
 
-r = pdk.Deck(
-    layers=[hex_layer],
-    initial_view_state=view_state,
-    tooltip=tooltip_html
-)
-r
 # Display PyDeck plot in Streamlit
 st.subheader("Hexagon Plot of Not Returned Dogs")
 st.pydeck_chart(r)
