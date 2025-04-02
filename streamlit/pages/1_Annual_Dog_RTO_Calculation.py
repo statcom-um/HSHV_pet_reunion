@@ -27,6 +27,9 @@ if uploaded_file is not None:
         # Display the results
         st.subheader("Yearly RTO Data")
         st.dataframe(rto_data)
+        
+        # Reset index and rename the column to 'year'
+        rto_data = rto_data.reset_index().rename(columns={'index': 'year'})
         st.write(rto_data.columns.tolist())
         # Plot the RTO rate
         st.subheader("RTO Rate Over Time")
