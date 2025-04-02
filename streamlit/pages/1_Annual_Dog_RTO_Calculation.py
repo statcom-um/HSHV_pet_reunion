@@ -33,7 +33,8 @@ if uploaded_file is not None:
         st.write(rto_data.columns.tolist())
         # Plot the RTO rate
         st.subheader("RTO Rate Over Time")
-        st.line_chart(rto_data['rto'], x="year")
+        #st.line_chart(rto_data['rto'], x="year")
+        st.line_chart(rto_data, x='year', y='rto')
     else:
         st.error(f"The uploaded file must contain the following columns: {', '.join(required_columns)}")
 else:
