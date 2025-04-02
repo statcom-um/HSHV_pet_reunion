@@ -139,27 +139,27 @@ if data is not None:
     st_folium(m_noclust, width=700, height=500)
     
                
-    heatmap_option = st.selectbox("Select Heatmap Type:", ["Overall", "Pets Returned", "Pets Not Returned"])
+    heatmap_option = st.selectbox("Select Heatmap Type:", ["Overall Dog Location when Found", "Dogs Returned", "Dogs Not Returned"])
 
     # Base map
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
     
-    if heatmap_option == "Overall":
-        heat_data_all = data[['lat', 'lon']].dropna().values.tolist()
+    if heatmap_option == "Overall Dog Location when Found":
+        heat_data_all = dog_data[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_all, radius=15).add_to(m)
-        st.write("### General Heatmap")
+        st.write("### General Heatmap of Dog Location when Found")
     
-    elif heatmap_option == "Pets Returned":
-        df_returned = data[~data['Returned to Address'].isna()].copy()
+    elif heatmap_option == "Dogs Returned":
+        df_returned = dog_data[~dog_data['Returned to Address'].isna()].copy()
         heat_data_returned = df_returned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_returned, radius=15).add_to(m)
-        st.write("### Heatmap of Pets Returned")
+        st.write("### Heatmap of Dogs Returned")
     
-    elif heatmap_option == "Pets Not Returned":
-        df_nodup_notreturned = data[data['Returned to Address'].isna()].copy()
+    elif heatmap_option == "Dogs Not Returned":
+        df_nodup_notreturned = dog_data[data['Returned to Address'].isna()].copy()
         heat_data_notreturned = df_nodup_notreturned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_notreturned, radius=15).add_to(m)
-        st.write("### Heatmap of Pets Not Returned")
+        st.write("### Heatmap of Dogs Not Returned")
     
     st_folium(m, width=700, height=500)
 
