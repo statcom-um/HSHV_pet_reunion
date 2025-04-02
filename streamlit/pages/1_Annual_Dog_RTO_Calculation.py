@@ -25,7 +25,7 @@ if uploaded_file is not None:
         # Display the results
         st.subheader("Yearly RTO Data")
         st.dataframe(rto_data)
-
+        print(rto_data.columns)
         # Plot the RTO rate
         st.subheader("RTO Rate Over Time")
         st.line_chart(rto_data['rto'], x="year")
