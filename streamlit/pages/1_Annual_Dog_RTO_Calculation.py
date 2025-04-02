@@ -9,6 +9,8 @@ st.title("Return-to-Owner (RTO) Dog Analysis")
 st.text("TO USE: Upload a csv file with columns named Outcome Type, Animal #, Outcome Date, Intake Date, Species")
 st.text("There can be other columns in the file but these 5 are required and names are case and space dependent")
 
+st.text("add example csv file")
+
 # File uploader
 uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
@@ -25,7 +27,7 @@ if uploaded_file is not None:
         # Display the results
         st.subheader("Yearly RTO Data")
         st.dataframe(rto_data)
-        print(rto_data.columns)
+        st.write(df.columns.tolist())
         # Plot the RTO rate
         st.subheader("RTO Rate Over Time")
         st.line_chart(rto_data['rto'], x="year")
