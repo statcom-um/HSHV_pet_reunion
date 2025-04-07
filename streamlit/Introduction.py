@@ -18,15 +18,14 @@ This interactive app presents insights derived from our recent analysis, aimed a
 
 """)
 
-st.markdown("---")
-
-st.markdown("## View Full Report")
 st.download_button(
     label="Download Full Report",
     data=open("Results_final.pdf", "rb"),
     file_name="HSHV_RTO_Report.pdf",
     mime="application/pdf",
 )
+
+st.markdown("---")
 
 with open("Results_final.pdf", "rb") as f:
     base64_pdf = f.read()
