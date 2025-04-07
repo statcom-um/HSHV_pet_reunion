@@ -1,5 +1,4 @@
 import streamlit as st
-import base64
 from streamlit_pdf_viewer import pdf_viewer
 
 st.set_page_config(
@@ -8,12 +7,25 @@ st.set_page_config(
     layout="wide",
 )
 
-st.sidebar.success("Select a demo above.")
-
+# Header
 st.title("HSHV Return-to-Owner Analysis")
+st.markdown("##### Humane Society of Huron Valley (HSHV) | Data Insights")
 
-st.markdown("### Executive Summary")
-st.markdown("Insights from the Return-to-Owner (RTO) analysis conducted for the Humane Society of Huron Valley (HSHV).")
+# Intro Section
+st.markdown("""
+Welcome to the Return-to-Owner Analysis dashboard.
+
+This interactive app presents insights derived from our recent analysis, aimed at understanding patterns and opportunities related to animal returns to their owners.
+
+""")
+st.markdown("---")
+
+st.download_button(
+    label="Download Full Report",
+    data=open("Results_final.pdf", "rb"),
+    file_name="HSHV_RTO_Report.pdf",
+    mime="application/pdf",
+)
 
 st.markdown("---")
 
@@ -23,13 +35,3 @@ with open("Results_final.pdf", "rb") as f:
     base64_pdf = f.read()
 
 pdf_viewer(base64_pdf)
-
-
-st.markdown("---")
-
-st.download_button(
-    label="Download Full Report",
-    data=open("Results_final.pdf", "rb"),
-    file_name="HSHV_RTO_Report.pdf",
-    mime="application/pdf",
-)
