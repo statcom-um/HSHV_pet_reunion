@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Return-to-Owner Analysis",
@@ -18,20 +19,19 @@ st.markdown("---")
 
 st.markdown("## View Full Report")
 
-# Embed the PDF in the app
 def show_pdf(file_path):
     with open(file_path, "rb") as f:
         base64_pdf = base64.b64encode(f.read()).decode('utf-8')
     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="1000px" type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
+    components.html(pdf_display, height=1000)
 
-show_pdf("Results (final).pdf")
+show_pdf("Results_final.pdf")
 
 st.markdown("---")
 
 st.download_button(
     label="Download Full Report",
-    data=open("Results (final).pdf", "rb"),
+    data=open("Results_final.pdf", "rb"),
     file_name="HSHV_RTO_Report.pdf",
     mime="application/pdf",
 )
