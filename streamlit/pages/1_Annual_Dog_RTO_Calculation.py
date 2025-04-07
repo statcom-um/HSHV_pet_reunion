@@ -7,9 +7,8 @@ from data_script import get_rto
 st.title("Return-to-Owner (RTO) Dog Analysis")
 
 st.text("TO USE: Upload a csv file with columns named Outcome Type, Animal #, Outcome Date, Intake Date, Species")
-st.text("There can be other columns in the file but these 5 are required and names are case and space dependent")
+st.text("There can be other columns in the file, but these 5 are required (names are case- and space-dependent.")
 
-st.text("add example csv file")
 st.image('streamlit/RTO_csv_example.jpeg', caption="Example CSV file with required columns")
 
 # File uploader
