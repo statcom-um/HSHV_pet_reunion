@@ -14,7 +14,7 @@ st.markdown("##### Humane Society of Huron Valley (HSHV) | Data Insights")
 # Intro Section
 st.markdown("""
 
-This interactive app presents insights derived from our recent analysis, aimed at understanding patterns and opportunities related to animal returns to their owners.
+This interactive app presents insights derived from our data analysis, aimed at understanding patterns and implementing interventions focused on increasing animal return rates to their owners.
 
 """)
 
