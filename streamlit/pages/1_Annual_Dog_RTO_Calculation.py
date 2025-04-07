@@ -10,7 +10,7 @@ st.text("TO USE: Upload a csv file with columns named Outcome Type, Animal #, Ou
 st.text("There can be other columns in the file but these 5 are required and names are case and space dependent")
 
 st.text("add example csv file")
-st.image("../RTO_csv_example.png", caption="Example CSV file with required columns")
+st.image("RTO_csv_example.png", caption="Example CSV file with required columns")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
