@@ -18,7 +18,6 @@ st.markdown("##### Humane Society of Huron Valley (HSHV) | Data Insights")
 
 # Intro Section
 st.markdown("""
-Welcome to the Return-to-Owner Analysis dashboard.
 
 This interactive app presents insights derived from our recent analysis, aimed at understanding patterns and opportunities related to animal returns to their owners.
 
