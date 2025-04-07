@@ -21,7 +21,7 @@ This interactive app presents insights derived from our data analysis, aimed at 
 st.download_button(
     label="Download Full Report",
     data=open("Results_final.pdf", "rb"),
-    file_name="HSHV_RTO_Report.pdf",
+    file_name="HSHV_RTO_FinalReport.pdf",
     mime="application/pdf",
 )
 
