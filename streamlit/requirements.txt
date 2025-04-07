@@ -3,4 +3,4 @@ streamlit
 streamlit_folium
 pandas
 requests
-PyPDF2
+base64
