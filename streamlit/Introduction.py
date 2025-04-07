@@ -1,47 +1,37 @@
-"""Intros"""
 import streamlit as st
-from PyPDF2 import PdfReader
+import base64
 
 st.set_page_config(
     page_title="Return-to-Owner Analysis",
-    page_icon="🌎",
+    page_icon=":world_map:",
     layout="wide",
 )
 
-# Sidebar
-st.sidebar.title("Navigation")
-st.sidebar.success("Select a section above.")
+st.sidebar.success("Select a demo above.")
 
-# Header
 st.title("HSHV Return-to-Owner Analysis")
-st.markdown("##### Humane Society of Huron Valley (HSHV) | Data Insights")
 
-# Intro Section
-st.markdown("""
+st.markdown("### Executive Summary")
+st.markdown("Insights from the Return-to-Owner (RTO) analysis conducted for the Humane Society of Huron Valley (HSHV).")
 
-This interactive app presents insights derived from our recent analysis, aimed at understanding patterns and opportunities related to animal returns to their owners.
-
-""")
-
-# PDF Viewer Section
-st.subheader("Results Report")
-
-# Load PDF
-with open("Results (final).pdf", "rb") as f:
-    reader = PdfReader(f)
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text() + "\n"
-
-# Expandable view
-with st.expander("View Full Report"):
-    st.text(text)
-
-# Optional: Download button for client
-with open("Results (final).pdf", "rb") as f:
-    st.download_button("Download Full PDF Report", f, file_name="Results_Report.pdf")
-
-# Footer
 st.markdown("---")
-st.markdown("App developed by [Your Name or Org]")
 
+st.markdown("## View Full Report")
+
+# Embed the PDF in the app
+def show_pdf(file_path):
+    with open(file_path, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="1000px" type="application/pdf"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
+
+show_pdf("Results (final).pdf")
+
+st.markdown("---")
+
+st.download_button(
+    label="Download Full Report",
+    data=open("Results (final).pdf", "rb"),
+    file_name="HSHV_RTO_Report.pdf",
+    mime="application/pdf",
+)
