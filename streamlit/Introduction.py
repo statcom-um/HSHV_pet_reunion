@@ -1,6 +1,6 @@
 import streamlit as st
 import base64
-import streamlit.components.v1 as components
+from streamlit_pdf_viewer import pdf_viewer
 
 st.set_page_config(
     page_title="Return-to-Owner Analysis",
@@ -17,15 +17,13 @@ st.markdown("Insights from the Return-to-Owner (RTO) analysis conducted for the 
 
 st.markdown("---")
 
-st.markdown("## View Full Report")
+st.title("View Full Report")
 
-def show_pdf(file_path):
-    with open(file_path, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="1000px" type="application/pdf"></iframe>'
-    components.html(pdf_display, height=1000)
+with open("Results_final.pdf", "rb") as f:
+    base64_pdf = f.read()
 
-show_pdf("Results_final.pdf")
+pdf_viewer(base64_pdf)
+
 
 st.markdown("---")
 
