@@ -3,6 +3,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 from folium.plugins import MarkerCluster, HeatMap, FastMarkerCluster
 import pandas as pd
+import numpy as np  # You need this for the np.where function
 
 # set the pages
 st.set_page_config(
