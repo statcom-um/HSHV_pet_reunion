@@ -15,7 +15,7 @@ st.markdown("##### Humane Society of Huron Valley (HSHV) | Data Insights")
 st.markdown("""
 
 This interactive app presents insights derived from our data analysis, aimed at understanding geographic patterns and guiding ideas for interventions to increase return-to-owner rates. 
-The scope of this analysis is limited to dogs.
+While the report begins with a comprehensive exploratory analysis, the interactive application focuses on dogs only.
 
 """)
 
