@@ -31,9 +31,10 @@ if data is not None:
     # Convert latitude and longitude to float
     data['lat'] = data['lat'].astype(float)
     data['lon'] = data['lon'].astype(float)
-    
-    # Returned to Address (RTO)
-    data['RTO'] = data['Returned to Address'].notna().astype(int)
+
+    # Human addresses are somewhat sensitive data we don't want to make public
+    # # Returned to Address (RTO)
+    # data['RTO'] = data['Returned to Address'].notna().astype(int)
     
     # Extract year from "Outcome Date"
     data['Outcome_Year'] = pd.to_datetime(data['Outcome Date'], errors='coerce').dt.year
@@ -41,6 +42,9 @@ if data is not None:
     # Filter only dog data
     data['Species_new'] = data['Species'].apply(lambda x: 'Cat' if x == 'Cat' else ('Dog' if x == 'Dog' else 'Others'))
     dog_data = data.loc[data['Species_new'] == 'Dog']
+
+     # Determine whether the dog was returned
+    dog_data['Returned'] = np.where(dog_data['Outcome Type'].str.contains('Stray Reclaim', na=False), 1, 0)
     
     # Define center coordinates (HSHV address)
     center_lat = 42.30638684408865
@@ -150,13 +154,15 @@ if data is not None:
         st.write("### General Heatmap of Dog Location when Found")
     
     elif heatmap_option == "Dogs Returned":
-        df_returned = dog_data[~dog_data['Returned to Address'].isna()].copy()
+        # df_returned = dog_data[~dog_data['Returned to Address'].isna()].copy()
+        df_returned = dog_data[dog_data['Returned'] == 1].copy()
         heat_data_returned = df_returned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_returned, radius=15).add_to(m)
         st.write("### Heatmap of Dogs Returned")
     
     elif heatmap_option == "Dogs Not Returned":
-        df_nodup_notreturned = dog_data[data['Returned to Address'].isna()].copy()
+        # df_nodup_notreturned = dog_data[data['Returned to Address'].isna()].copy()
+        df_nodup_notreturned = dog_data[dog_data['Returned'] == 0].copy()
         heat_data_notreturned = df_nodup_notreturned[['lat', 'lon']].dropna().values.tolist()
         HeatMap(heat_data_notreturned, radius=15).add_to(m)
         st.write("### Heatmap of Dogs Not Returned")
