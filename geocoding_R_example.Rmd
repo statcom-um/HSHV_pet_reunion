@@ -13,7 +13,7 @@ library(mapsapi)
 
 #### NOTE that this is Sophia's personal API key. Don't share it! ####
 
-key = "AIzaSyCQhSlO7I12W_LENQsmU_JMkT7hFa4zmRw"
+key = "redacted"
 
 ##############
 
